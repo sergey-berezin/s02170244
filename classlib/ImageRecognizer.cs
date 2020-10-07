@@ -10,20 +10,54 @@ using System.IO;
 using System.Threading;
 namespace classlib
 {
-    
-    public class MyClass
+    public interface IConsoleView
     {
+        void ReturnRes(ImageInfo info);
+    }
+    public class ImageInfo
+    {
+        string path;
+        List<string> className;
+        List<float> confidence;
+        public ImageInfo()
+        {
+            string path = "";
+            className = new List<string>();
+            confidence = new List<float>();
+        }
+        public void AddInfo(string p, string cl, float conf)
+        {
+            path = p;
+            className.Add(cl);
+            confidence.Add(conf);
+        }
+        public override string ToString()
+        {
+            string res = path + "\n";
+            for (int i = 0; i < className.Count; i++)
+            {
+                res += className[i] + " with confidence " + confidence[i] + "\n";
+            }
+            return res;
+        }
+    }
+    public class ImageRecognizer
+    {
+        IConsoleView iConsoleInterface;
         List<string> fullNames = new List<string>();
-        public List<string> result = new List<string>();
+        public List<ImageInfo> result = new List<ImageInfo>();
+        
         public static CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
         public static CancellationToken token = cancelTokenSource.Token;
         AutoResetEvent waitHandler = new AutoResetEvent(true);
-        public MyClass(DirectoryInfo inputDir)
+        public ImageRecognizer(DirectoryInfo inputDir, IConsoleView icons)
         {
             foreach (var file in inputDir.GetFiles())
             {
                 fullNames.Add(file.FullName);
             }
+            iConsoleInterface = icons;
+
         }
         public void GetResults()
         {
@@ -33,6 +67,7 @@ namespace classlib
             Thread[] threads = new Thread[numThreads];
             for (int i = 0; i < numThreads; i++)
             {
+                
                 int chunkStart = i * chunk;
                  
                 int chunkEnd = chunkStart + chunk < fullNames.Count() ? chunkStart + chunk : fullNames.Count();
@@ -88,9 +123,10 @@ namespace classlib
 
                         // Вычисляем предсказание нейросетью
                         waitHandler.WaitOne();
+                        ImageInfo tmp = new ImageInfo();
                         var session = new InferenceSession("resnet18-v2-7.onnx");
-                        string res = "";
-                        res = "Predicting contents of image...\n";  
+                        
+                        //res = "Predicting contents of image...\n";  
                         //Console.WriteLine("Predicting contents of image...");     
                         IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = session.Run(inputs);
 
@@ -106,13 +142,16 @@ namespace classlib
                         .Select((x, g) => new { Label = classLabels[g], Confidence = x })
                         .OrderByDescending(x => x.Confidence)
                         .Take(10))
-                        res += p.Label + " with confidence " + p.Confidence + "\n";
+                        tmp.AddInfo(fullNames[j], p.Label, p.Confidence);
+                        //res += p.Label + " with confidence " + p.Confidence + "\n";
                         //Console.WriteLine($"{p.Label} with confidence {p.Confidence}");
 
                         
                         //Console.WriteLine("pic: " + j);
-                        res += "\n";
-                        result.Add(res);
+                        // Console.WriteLine(tmp);
+                        //res += "\n";
+                        //result.Add(tmp);
+                        iConsoleInterface.ReturnRes(tmp);
                         //Thread.Sleep(1000);
                         waitHandler.Set();
                     }
