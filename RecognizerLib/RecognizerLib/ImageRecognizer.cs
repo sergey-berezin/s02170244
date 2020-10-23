@@ -8,50 +8,32 @@ using Microsoft.ML.OnnxRuntime;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-namespace classlib
+
+namespace RecognizerLib
 {
     public interface IConsoleView
     {
         void ReturnRes(ImageInfo info);
     }
-    public class ImageInfo
+    public interface IVMResults
     {
-        string path;
-        List<string> className;
-        List<float> confidence;
-        public ImageInfo()
-        {
-            string path = "";
-            className = new List<string>();
-            confidence = new List<float>();
-        }
-        public void AddInfo(string p, string cl, float conf)
-        {
-            path = p;
-            className.Add(cl);
-            confidence.Add(conf);
-        }
-        public override string ToString()
-        {
-            string res = path + "\n";
-            for (int i = 0; i < className.Count; i++)
-            {
-                res += className[i] + " with confidence " + confidence[i] + "\n";
-            }
-            return res;
-        }
+        void ReturnRes(ImageInfo info);
     }
     public class ImageRecognizer
     {
         IConsoleView iConsoleInterface;
+        IVMResults vMResults;
+
         List<string> fullNames = new List<string>();
         public List<ImageInfo> result = new List<ImageInfo>();
-        
+
         public static CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
         public static CancellationToken token = cancelTokenSource.Token;
         AutoResetEvent waitHandler = new AutoResetEvent(true);
-        public ImageRecognizer(DirectoryInfo inputDir, IConsoleView icons)
+
+        public ImageRecognizer(DirectoryInfo inputDir, IConsoleView icons = null)
         {
+            
             foreach (var file in inputDir.GetFiles())
             {
                 fullNames.Add(file.FullName);
@@ -59,24 +41,33 @@ namespace classlib
             iConsoleInterface = icons;
 
         }
+        public ImageRecognizer(List<string> files, IVMResults vM = null)
+        {
+            fullNames = files;
+            vMResults = vM;
+        }
+        public void Cancel()
+        {
+            cancelTokenSource.Cancel();
+        }
         public void GetResults()
         {
             int numThreads = Environment.ProcessorCount;
             int chunk = fullNames.Count() / numThreads + 1;
-            
+
             Thread[] threads = new Thread[numThreads];
             for (int i = 0; i < numThreads; i++)
             {
-                
+
                 int chunkStart = i * chunk;
-                 
+
                 int chunkEnd = chunkStart + chunk < fullNames.Count() ? chunkStart + chunk : fullNames.Count();
 
                 threads[i] = new Thread(() =>
                 {
-                    
-                     for (int j = chunkStart; j < chunkEnd; j++)
-                     {
+
+                    for (int j = chunkStart; j < chunkEnd; j++)
+                    {
                         if (token.IsCancellationRequested)
                         {
                             //Console.WriteLine("Termination...");
@@ -84,7 +75,7 @@ namespace classlib
                             return;
                             //System.Environment.Exit(0);
                         }
-                        
+
                         var image = Image.Load<Rgb24>(fullNames[j]);
 
                         const int TargetWidth = 224;
@@ -105,7 +96,7 @@ namespace classlib
                         var mean = new[] { 0.485f, 0.456f, 0.406f };
                         var stddev = new[] { 0.229f, 0.224f, 0.225f };
                         for (int y = 0; y < TargetHeight; y++)
-                        {           
+                        {
                             Span<Rgb24> pixelSpan = image.GetPixelRowSpan(y);
                             for (int x = 0; x < TargetWidth; x++)
                             {
@@ -116,16 +107,16 @@ namespace classlib
                         }
 
                         // Подготавливаем входные данные нейросети. Имя input задано в файле модели
-                        var inputs = new List<NamedOnnxValue>  
-                        { 
-                            NamedOnnxValue.CreateFromTensor("data", input) 
+                        var inputs = new List<NamedOnnxValue>
+                        {
+                            NamedOnnxValue.CreateFromTensor("data", input)
                         };
 
                         // Вычисляем предсказание нейросетью
                         waitHandler.WaitOne();
                         ImageInfo tmp = new ImageInfo();
-                        var session = new InferenceSession("resnet18-v2-7.onnx");
-                        
+                        var session = new InferenceSession(@"C:\Users\Маша\Documents\Visual Studio 2017\Projects\RecognizerLib\resnet18-v2-7.onnx");
+
                         //res = "Predicting contents of image...\n";  
                         //Console.WriteLine("Predicting contents of image...");     
                         IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results = session.Run(inputs);
@@ -135,27 +126,30 @@ namespace classlib
                         var sum = output.Sum(x => (float)Math.Exp(x));
                         var softmax = output.Select(x => (float)Math.Exp(x) / sum);
 
-                    // Выдаем 10 наиболее вероятных результатов на экран
-                        
-                        
-                        foreach(var p in softmax
+                        // Выдаем 10 наиболее вероятных результатов на экран
+
+
+                        foreach (var p in softmax
                         .Select((x, g) => new { Label = classLabels[g], Confidence = x })
                         .OrderByDescending(x => x.Confidence)
                         .Take(10))
-                        tmp.AddInfo(fullNames[j], p.Label, p.Confidence);
+                            tmp.AddInfo(fullNames[j], p.Label, p.Confidence);
                         //res += p.Label + " with confidence " + p.Confidence + "\n";
                         //Console.WriteLine($"{p.Label} with confidence {p.Confidence}");
 
-                        
+
                         //Console.WriteLine("pic: " + j);
                         // Console.WriteLine(tmp);
                         //res += "\n";
                         //result.Add(tmp);
-                        iConsoleInterface.ReturnRes(tmp);
+                        if (iConsoleInterface != null)
+                            iConsoleInterface.ReturnRes(tmp);
+
+                        vMResults.ReturnRes(tmp);
                         //Thread.Sleep(1000);
                         waitHandler.Set();
                     }
-                 });
+                });
                 threads[i].Start();
 
             }
@@ -165,8 +159,8 @@ namespace classlib
             }
         }
 
-        static readonly string[] classLabels = new[] 
-        {   
+        static readonly string[] classLabels = new[]
+        {
             "tench",
             "goldfish",
             "great white shark",
@@ -1168,5 +1162,6 @@ namespace classlib
             "ear",
             "toilet paper"
         };
+
     }
 }
