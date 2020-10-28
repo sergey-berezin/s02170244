@@ -139,14 +139,12 @@ namespace ViewModelLib
 
         public void RecognizeFunck()
         {
-            
+
             ThreadPool.QueueUserWorkItem(new WaitCallback(_ =>
             {
-                Dispatcher.CurrentDispatcher.Invoke(new Action(() =>
-              {
-                  imageRecognizer.GetResults();
-              }));
-
+   
+                imageRecognizer.GetResults();
+   
             }));
             
         }
@@ -174,7 +172,7 @@ namespace ViewModelLib
 
         }
     }
-    public class ForResults : IVMResults
+    public class ForResults : IResults
     {
         MainVM mainVM;
         public ForResults(MainVM main)

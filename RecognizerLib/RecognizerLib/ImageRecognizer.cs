@@ -11,18 +11,18 @@ using System.Threading;
 
 namespace RecognizerLib
 {
-    public interface IConsoleView
+    public interface IResults
     {
         void ReturnRes(ImageInfo info);
     }
-    public interface IVMResults
-    {
-        void ReturnRes(ImageInfo info);
-    }
+    //public interface IVMResults
+    //{
+    //    void ReturnRes(ImageInfo info);
+    //}
     public class ImageRecognizer
     {
-        IConsoleView iConsoleInterface;
-        IVMResults vMResults;
+        IResults ires;
+        //IVMResults vMResults;
 
         List<string> fullNames = new List<string>();
         public List<ImageInfo> result = new List<ImageInfo>();
@@ -31,20 +31,20 @@ namespace RecognizerLib
         public static CancellationToken token = cancelTokenSource.Token;
         AutoResetEvent waitHandler = new AutoResetEvent(true);
 
-        public ImageRecognizer(DirectoryInfo inputDir, IConsoleView icons = null)
+        public ImageRecognizer(DirectoryInfo inputDir, IResults res = null)
         {
             
             foreach (var file in inputDir.GetFiles())
             {
                 fullNames.Add(file.FullName);
             }
-            iConsoleInterface = icons;
+            ires = res;
 
         }
-        public ImageRecognizer(List<string> files, IVMResults vM = null)
+        public ImageRecognizer(List<string> files, IResults vM = null)
         {
             fullNames = files;
-            vMResults = vM;
+            ires = vM;
         }
         public void Cancel()
         {
@@ -142,10 +142,10 @@ namespace RecognizerLib
                         // Console.WriteLine(tmp);
                         //res += "\n";
                         //result.Add(tmp);
-                        if (iConsoleInterface != null)
-                            iConsoleInterface.ReturnRes(tmp);
+                        //if (iConsoleInterface != null)
+                        //    iConsoleInterface.ReturnRes(tmp);
 
-                        vMResults.ReturnRes(tmp);
+                        ires.ReturnRes(tmp);
                         //Thread.Sleep(1000);
                         waitHandler.Set();
                     }
