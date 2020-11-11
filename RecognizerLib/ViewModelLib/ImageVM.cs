@@ -63,13 +63,14 @@ namespace ViewModelLib
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Confidence)));
             }
         }
-        public ImageVM(string p, string n)
+        public ImageVM(string p, string n, float c = 0, string cl = "none")
         {
             imageInfo = new ImageInfo();
-            imageInfo.className.Add("none");
-            imageInfo.confidence.Add(0);
+            imageInfo.className.Add(cl);
+            imageInfo.confidence.Add(c);
             Path = p;
             Name = n;
         }
+        
     }
 }
