@@ -12,6 +12,6 @@ namespace Server.Database
         public DbSet<ImageData> Images { get; set; }
         //public DbSet<ImageClassData> Classes { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder o)
-            => o.UseLazyLoadingProxies(). UseSqlite(@"Data Source = C:\Users\Маша\Documents\Visual Studio 2017\Projects\RecognizerLib — копия\Server\mylib.db");
+            => o.UseLazyLoadingProxies(). UseSqlite(@"Data Source = C:\Users\Маша\Documents\Visual Studio 2017\Projects\RecognizerLib_Task4\Server\mylib.db");
     }
 }

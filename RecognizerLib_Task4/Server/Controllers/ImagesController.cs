@@ -53,7 +53,7 @@ namespace Server.Controllers
             return image;
         }
 
-        [HttpGet("{id}")]
+        [HttpDelete] 
         public void Clear(int id)
         {
             Console.Out.WriteLine("Clear");

@@ -158,7 +158,8 @@ namespace ViewModelLib
         public async void ClearDataBase()
         {
             var client = new HttpClient();
-            await client.GetAsync("http://localhost:5000/api/images/1/");
+            await client.DeleteAsync("http://localhost:5000/api/images/");
+           
             Statistics = new List<string>();
         }
         public void SelectImgs()
@@ -261,7 +262,7 @@ namespace ViewModelLib
                 return ms.ToArray();
             }
         }
-        public void SelectDirectory()
+        public async void SelectDirectory()
         {
             string stream = folderDialog.OpenFolder();
 
@@ -277,6 +278,7 @@ namespace ViewModelLib
                     var imageVM = new ImageVM(fileInfo.FullName, fileInfo.Name);
                     Images.Add(imageVM);
                 }
+
                 //ClassVMs = new ObservableCollection<ImageClassVM>();
 
                 //Progress = 0;
@@ -340,6 +342,7 @@ namespace ViewModelLib
 
                 //        }
                 //    }));
+                //}
             }
             //imageRecognizer = new ImageRecognizer(fileNames, new ForResults(this));
 
