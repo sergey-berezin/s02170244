@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<head>
+    <style type="text/css">
+        image 
+        {
+            float: left;
+        }
+       </style>   
+</head>
+<body>
+    <select id = "select" onchange="changeOption()">
+
+    </select>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="script.js"></script>
+    
+    <div style='text-align: left; cursor: e-resize;'>
+        <img id="image" src="up-vector-icon.jpg" alt="Image" width="200" height="200"  onclick="imgsrc(event);" />
+    </div>
+    <div id = name style='text-align: left;'>
+    </div>
+    <button id = "prev" onclick="slide_prev()">
+        Prev
+    </button>
+    <button id = "next" onclick="slide_next()">
+        Next
+    </button>
+    
+    <script src="sliderscript.js"></script>
+</body>
